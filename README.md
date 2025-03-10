@@ -2,7 +2,7 @@
 
 A realistic web-based Ubuntu terminal emulator powered by Mistral AI. This interactive CLI experience allows you to use Linux commands in your browser with persistent state and realistic responses.
 
-![Terminal Screenshot](https://placeholder.for/screenshot.png)
+![Terminal Screenshot](public/mistralxcli.png)
 
 ## Features
 
