@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { fetchMistralResponse } from './mistralAPI';
 
@@ -8,87 +7,55 @@ export interface CommandResponse {
 }
 
 export const processCommand = async (command: string, apiKey: string): Promise<CommandResponse> => {
-  const cmd = command.trim().toLowerCase();
-  const args = command.trim().split(' ').slice(1).join(' ');
+  const cmd = command.trim().split(' ')[0].toLowerCase();
   
-  // Basic commands
-  if (cmd === 'help') {
-    return {
-      message: (
-        <div className="space-y-2">
-          <p className="font-bold text-terminal-accent">Available Commands:</p>
-          <ul className="space-y-1 pl-2">
-            <li><span className="text-terminal-accent">help</span> - Display this help message</li>
-            <li><span className="text-terminal-accent">clear</span> - Clear the terminal (or use Ctrl+L)</li>
-            <li><span className="text-terminal-accent">api-key [KEY]</span> - Set your Mistral API key</li>
-            <li><span className="text-terminal-accent">mistral [PROMPT]</span> - Send a prompt to Mistral AI</li>
-            <li><span className="text-terminal-accent">about</span> - About this CLI emulator</li>
-            <li><span className="text-terminal-accent">echo [TEXT]</span> - Display text</li>
-            <li><span className="text-terminal-accent">date</span> - Display current date and time</li>
-          </ul>
-        </div>
-      ),
-      error: false,
-    };
-  }
-  
+  // Handle a few system commands locally
   if (cmd === 'clear') {
     // The actual clearing is handled in Terminal.tsx
     return { message: '', error: false };
   }
   
-  if (cmd === 'about') {
+  if (cmd === 'api-key') {
+    const key = command.trim().split(' ').slice(1).join(' ');
+    if (!key) {
+      return {
+        message: "Please provide an API key: api-key YOUR_API_KEY",
+        error: true,
+      };
+    }
+    return {
+      message: "API key set successfully. You can now use the terminal.",
+      error: false,
+    };
+  }
+  
+  // Special case for tab completion
+  if (command.includes('compgen -f')) {
+    // This is a special command for handling tab completion
+    const { message, error } = await fetchMistralResponse(command, apiKey);
+    return {
+      message: message,
+      error: error
+    };
+  }
+  
+  // Route everything else to Mistral
+  if (apiKey) {
+    // Keep track of command history to maintain context
+    const { message, error } = await fetchMistralResponse(command, apiKey);
+    
     return {
       message: (
-        <div className="space-y-2">
-          <p className="font-bold text-terminal-accent">Mistral CLI Emulator</p>
-          <p>A web-based terminal emulator for interacting with Mistral AI.</p>
-          <p>Designed for the developer relations role application to showcase UI/UX skills and API integration capabilities.</p>
-          <p>Built with React, TypeScript, Tailwind CSS, and a passion for elegant design.</p>
-          <p className="text-terminal-accent/80 text-sm mt-2">Version 1.0.0</p>
+        <div className="font-mono whitespace-pre-wrap">
+          {message}
         </div>
       ),
-      error: false,
+      error: error,
     };
-  }
-  
-  if (cmd === 'date') {
+  } else {
     return {
-      message: new Date().toString(),
-      error: false,
+      message: "Please set your API key first with: api-key YOUR_API_KEY",
+      error: true,
     };
   }
-  
-  if (cmd.startsWith('echo ')) {
-    return {
-      message: args,
-      error: false,
-    };
-  }
-  
-  // Mistral AI command
-  if (cmd.startsWith('mistral ')) {
-    if (!args) {
-      return {
-        message: "Error: Please provide a prompt for Mistral AI.",
-        error: true,
-      };
-    }
-    
-    try {
-      return await fetchMistralResponse(args, apiKey);
-    } catch (error) {
-      console.error('Error in Mistral command:', error);
-      return {
-        message: "Error: Failed to communicate with Mistral AI. Please try again.",
-        error: true,
-      };
-    }
-  }
-  
-  // Handle unknown commands
-  return {
-    message: `Command not found: ${cmd}. Type 'help' to see available commands.`,
-    error: true,
-  };
 };

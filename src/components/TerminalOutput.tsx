@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { OutputItem } from './Terminal';
 import { Loader2 } from 'lucide-react';
@@ -14,9 +13,31 @@ const TerminalOutput: React.FC<TerminalOutputProps> = ({ item }) => {
   // Handle typewriter effect for responses
   useEffect(() => {
     if (item.type === 'response' && typeof item.content === 'string') {
+      // Clean up the response text to remove explanations and excessive formatting
+      let cleanText = item.content as string;
+      
+      // Extract just the command output from between backticks when present
+      const codeBlockMatch = cleanText.match(/```\n([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        cleanText = codeBlockMatch[1];
+      }
+      
+      // Remove absolute paths that appear on their own line
+      cleanText = cleanText.replace(/^\/(home|usr|etc|var)\/[a-zA-Z0-9_\/~.-]+$/gm, '');
+      
+      // Remove explanatory text
+      cleanText = cleanText.replace(/^This (command|directory|file).*$/gm, '');
+      cleanText = cleanText.replace(/^You can.*$/gm, '');
+      cleanText = cleanText.replace(/^Remember.*$/gm, '');
+      cleanText = cleanText.replace(/^For example.*$/gm, '');
+      cleanText = cleanText.replace(/^That's the basic.*$/gm, '');
+      cleanText = cleanText.replace(/^Here's.*$/gm, '');
+      cleanText = cleanText.replace(/^If you want.*$/gm, '');
+      
+      // Set the cleaner text for display
       setIsTyping(true);
+      const text = cleanText.trim();
       let index = 0;
-      const text = item.content as string;
       const typeInterval = setInterval(() => {
         if (index < text.length) {
           setDisplayedText(text.substring(0, index + 1));
@@ -25,7 +46,7 @@ const TerminalOutput: React.FC<TerminalOutputProps> = ({ item }) => {
           clearInterval(typeInterval);
           setIsTyping(false);
         }
-      }, 10); // Adjust typing speed here
+      }, 5); // Fast typing speed
       
       return () => clearInterval(typeInterval);
     }

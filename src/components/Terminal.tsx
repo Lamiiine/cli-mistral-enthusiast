@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import TerminalInput from './TerminalInput';
 import TerminalOutput from './TerminalOutput';
 import { useCommandHistory } from '@/hooks/useCommandHistory';
 import { processCommand } from '@/utils/terminalCommands';
 import { toast } from '@/components/ui/use-toast';
+import { clearCommandContext } from '@/utils/commandContext';
 
 export type OutputItem = {
   id: string;
@@ -14,9 +14,10 @@ export type OutputItem = {
 };
 
 const Terminal = () => {
-  const [apiKey, setApiKey] = useState<string>('');
+  const [apiKey, setApiKey] = useState<string>(import.meta.env.VITE_MISTRAL_API_KEY || '');
   const [outputs, setOutputs] = useState<OutputItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [currentDirectory, setCurrentDirectory] = useState<string>('/home/user');
   const { history, addToHistory, navigateHistory, currentPosition } = useCommandHistory();
   const terminalRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -28,15 +29,26 @@ const Terminal = () => {
       type: 'info',
       content: (
         <div className="space-y-1 animate-text-appear">
-          <p className="text-terminal-accent font-bold">Welcome to Mistral CLI Emulator</p>
-          <p>Type <span className="text-terminal-accent">'help'</span> to see available commands.</p>
-          <p>To interact with Mistral AI, first set your API key with: <span className="text-terminal-accent">'api-key YOUR_API_KEY'</span></p>
+          <p className="text-terminal-accent font-bold">Ubuntu 22.04 LTS Terminal Emulator</p>
+          <p>Type commands as you would in a regular Ubuntu terminal.</p>
+          <p>Use <span className="text-terminal-accent">'clear'</span> to clear the screen.</p>
         </div>
       ),
       timestamp: new Date(),
     };
+    
+    // Only show API key message if needed
+    if (!apiKey) {
+      welcomeMessage.content = (
+        <div className="space-y-1 animate-text-appear">
+          <p className="text-terminal-accent font-bold">Welcome to Ubuntu Terminal Emulator</p>
+          <p>Please set your API key first with: <span className="text-terminal-accent">'api-key YOUR_API_KEY'</span></p>
+        </div>
+      );
+    }
+    
     setOutputs([welcomeMessage]);
-  }, []);
+  }, [apiKey]);
 
   // Scroll to bottom when outputs change
   useEffect(() => {
@@ -78,6 +90,9 @@ const Terminal = () => {
           title: "API Key Set",
           description: "Your Mistral API key has been set successfully.",
         });
+      } else if (command.trim() === 'clear') {
+        clearTerminal();
+        clearCommandContext(); // Clear the command context when clearing the terminal
       } else {
         // Process the command and get the response
         const loadingId = `loading-${Date.now()}`;
@@ -90,13 +105,65 @@ const Terminal = () => {
         
         const response = await processCommand(command, apiKey);
         
+        // Clean up response content to make it more terminal-like
+        let cleanedContent = response.message;
+        if (typeof cleanedContent === 'string') {
+          // Extract content from code blocks (triple backticks)
+          const codeBlockRegex = /```(?:\w*\n)?([\s\S]*?)```/g;
+          const codeMatches = [...cleanedContent.matchAll(codeBlockRegex)];
+          
+          if (codeMatches.length > 0) {
+            // If we have code blocks, extract only their content
+            cleanedContent = codeMatches.map(match => {
+              // Clean up any $ prefix from command output
+              return match[1].trim()
+                .replace(/^\$ .*$/gm, '') // Remove lines starting with $
+                .replace(/^user@ubuntu:.*\$ *$/gm, ''); // Remove Ubuntu prompt lines
+            }).join('\n');
+          } else {
+            // Remove explanatory text patterns that don't belong in a terminal
+            cleanedContent = cleanedContent
+              .replace(/^Here's how .*$/gm, '')
+              .replace(/^You can .*$/gm, '')
+              .replace(/^To .*$/gm, '')
+              .replace(/^This command .*$/gm, '')
+              .replace(/^The command .*$/gm, '')
+              .replace(/^In a real Ubuntu terminal.*$/gm, '')
+              .replace(/^For more information.*$/gm, '')
+              .replace(/^Remember .*$/gm, '')
+              .replace(/.*explanation.*$/gm, '')
+              .replace(/^\$ .*$/gm, '') // Remove lines starting with $
+              .replace(/^user@ubuntu:.*\$ *$/gm, '') // Remove Ubuntu prompt lines
+              .trim();
+          }
+        }
+        
+        // Update CD command handling to process the directory properly
+        if (command.trim().startsWith('cd ') && !response.error) {
+          // Extract directory path for cd command - improve the regex to be more precise
+          const pathRegex = /(?:^|\n)\/[a-zA-Z0-9_/~.-]+(?:\n|$)/m;
+          const match = pathRegex.exec(response.message.toString());
+          if (match) {
+            const newPath = match[0].trim();
+            console.log('Extracted path:', newPath); // For debugging
+            setCurrentDirectory(newPath);
+            
+            // Remove the path from the response to avoid duplication
+            if (typeof cleanedContent === 'string') {
+              cleanedContent = cleanedContent.replace(pathRegex, '').trim();
+            }
+          } else {
+            console.log('No path match found in:', response.message.toString()); // Debug when no match
+          }
+        }
+        
         // Remove loading indicator and add the response
         setOutputs(prev => {
           const filtered = prev.filter(item => item.id !== loadingId);
           return [...filtered, {
             id: `response-${Date.now()}`,
             type: response.error ? 'error' : 'response',
-            content: response.message,
+            content: cleanedContent,
             timestamp: new Date(),
           }];
         });
@@ -114,6 +181,25 @@ const Terminal = () => {
     }
   };
 
+  const handleTabCompletion = async (partialPath: string) => {
+    if (!apiKey) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      // Create a tab completion command
+      const tabCommand = `compgen -f "${partialPath}" || echo "No matches found"`;
+      const response = await processCommand(tabCommand, apiKey);
+      
+      // Return the completions (this will be handled by the TerminalInput component)
+      setIsProcessing(false);
+      return response.error ? [] : response.message.toString().split('\n').filter(Boolean);
+    } catch (error) {
+      setIsProcessing(false);
+      return [];
+    }
+  };
+
   const clearTerminal = () => {
     setOutputs([]);
   };
@@ -127,7 +213,7 @@ const Terminal = () => {
           <span className="h-3 w-3 rounded-full bg-yellow-500 opacity-70"></span>
           <span className="h-3 w-3 rounded-full bg-green-500 opacity-70"></span>
         </div>
-        <div className="flex-1 text-center text-xs font-medium opacity-60">mistral-cli ~ user@mistral</div>
+        <div className="flex-1 text-center text-xs font-medium opacity-60">terminal ~ {currentDirectory}</div>
         <div className="text-xs opacity-60">{new Date().toLocaleTimeString()}</div>
       </div>
       
@@ -146,11 +232,13 @@ const Terminal = () => {
         
         <TerminalInput 
           onSubmit={handleCommand}
+          onTabCompletion={handleTabCompletion}
           isProcessing={isProcessing}
           commandHistory={history}
           navigateHistory={navigateHistory}
           currentPosition={currentPosition}
           clearTerminal={clearTerminal}
+          currentDirectory={currentDirectory}
         />
       </div>
     </div>
