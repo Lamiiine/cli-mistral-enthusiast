@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { fetchMistralResponse } from './mistralAPI';
 
 export interface CommandResponse {
