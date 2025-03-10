@@ -1,69 +1,105 @@
-# Welcome to your Lovable project
+# Ubuntu Terminal Emulator
 
-## Project info
+A realistic web-based Ubuntu terminal emulator powered by Mistral AI. This interactive CLI experience allows you to use Linux commands in your browser with persistent state and realistic responses.
 
-**URL**: https://lovable.dev/projects/9652059a-4391-47b9-be5a-4094caaee556
+![Terminal Screenshot](https://placeholder.for/screenshot.png)
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- Realistic Ubuntu terminal experience in the browser
+- Processes real Linux commands through Mistral AI
+- Maintains persistent file system state
+- Supports command history navigation
+- Tab completion for file paths
+- Directory navigation with path display
+- Clean, minimalist terminal UI
 
-**Use Lovable**
+## Technologies Used
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9652059a-4391-47b9-be5a-4094caaee556) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
 - React
-- shadcn-ui
+- TypeScript
+- Vite
 - Tailwind CSS
+- shadcn/ui
+- Mistral AI API
 
-## How can I deploy this project?
+## Getting Started
 
-Simply open [Lovable](https://lovable.dev/projects/9652059a-4391-47b9-be5a-4094caaee556) and click on Share -> Publish.
+### Prerequisites
 
-## I want to use a custom domain - is that possible?
+- Node.js & npm installed
+- Mistral AI API key
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+### Installation
+
+1. Clone the repository:
+   ```
+   git clone <repository-url>
+   cd <project-directory>
+   ```
+
+2. Install dependencies:
+   ```
+   npm install
+   ```
+
+3. Create a `.env` file in the root directory with your Mistral AI API key:
+   ```
+   VITE_MISTRAL_API_KEY=your_mistral_api_key_here
+   ```
+   
+   Alternatively, you can set the API key directly in the terminal with the `api-key` command.
+
+4. Start the development server:
+   ```
+   npm run dev
+   ```
+
+5. Build for production:
+   ```
+   npm run build
+   ```
+
+## Using the Terminal
+
+### Available Commands
+
+The terminal supports most standard Linux commands, including but not limited to:
+
+- `ls` - List directory contents
+- `cd` - Change directory
+- `mkdir` - Create directory
+- `pwd` - Print working directory
+- `clear` - Clear the terminal (also available with Ctrl+L)
+- `help` - Display available commands
+- `api-key YOUR_API_KEY` - Set your Mistral API key
+- `mistral [PROMPT]` - Send a prompt directly to Mistral AI
+
+### Keyboard Shortcuts
+
+- `Up/Down Arrow`: Navigate through command history
+- `Tab`: Autocomplete file and directory names
+- `Ctrl+L`: Clear the terminal
+
+## How It Works
+
+This terminal emulator sends your commands to the Mistral AI API, which processes them as if they were run in a real Ubuntu environment. The application maintains state between commands, allowing for a realistic terminal session with persistent directories and files.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Mistral AI for providing the API
+- The shadcn/ui team for their component library
